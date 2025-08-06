@@ -18,12 +18,11 @@ Imports System.Windows.Forms
 'This module contains this program's core procedures.
 Public Module CoreModule
    'The Microsoft Windows API constants and functions used by this program.
-   Private Const ERROR_FILE_NOT_FOUND As Integer = 2&
-   Private Const ERROR_NO_MORE_ITEMS As Integer = 259&
-   Private Const ERROR_SUCCESS As Integer = 0&
+   Private Const ERROR_FILE_NOT_FOUND As UInteger = 2UI
+   Private Const ERROR_NO_MORE_ITEMS As UInteger = 259UI
+   Private Const ERROR_SUCCESS As UInteger = 0UI
    Private Const KEY_READ As UInteger = &H20019UI
    Private Const KEY_WOW64_64KEY As UInteger = &H100UI
-   Private Const MAX_REG_VALUE_DATA As Integer = &HFFFFF%
    Private Const REG_SZ As UInteger = &H1UI
    Private ReadOnly HKEY_CLASSES_ROOT As New IntPtr(&H80000000)
    Private ReadOnly HKEY_CURRENT_USER As New IntPtr(&H80000001)
@@ -43,7 +42,7 @@ Public Module CoreModule
    End Function
 
    'The constants used by this program.
-   Private Const MAX_SHORT_STRING As Long = &HFF&    'Defines the maximum length in bytes allowed for a short string.
+   Private Const MAX_SHORT_STRING As Integer = &HFF%    'Defines the maximum length in bytes allowed for a short string.
 
    Private ReadOnly IS_VALID_GUID As Func(Of String, Boolean) = Function(GUIDText As String) Guid.TryParse(GUIDText, Guid.Empty)  'This procedure verifies the specified GUID en returns the result.
 
