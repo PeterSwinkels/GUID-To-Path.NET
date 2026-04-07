@@ -31,7 +31,7 @@ Public Class InterfaceWindow
             .SetToolTip(ResultsBox, "Displays information regarding the specified GUIDs after a search.")
          End With
       Catch ExceptionO As Exception
-         HandleError(ExceptionO)
+         DisplayException(ExceptionO)
       End Try
    End Sub
 
@@ -69,7 +69,7 @@ Public Class InterfaceWindow
             Application.DoEvents()
          Next Line
       Catch ExceptionO As Exception
-         HandleError(ExceptionO)
+         DisplayException(ExceptionO)
       Finally
          Cursor.Current = Cursors.Default
       End Try

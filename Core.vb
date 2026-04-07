@@ -62,7 +62,7 @@ Public Module CoreModule
 
          Return Mode
       Catch ExceptionO As Exception
-         HandleError(ExceptionO)
+         DisplayException(ExceptionO)
       End Try
 
       Return New UInteger
@@ -81,18 +81,28 @@ Public Module CoreModule
 
          Return ResultBuilder.ToString()
       Catch ExceptionO As Exception
-         HandleError(ExceptionO)
+         DisplayException(ExceptionO)
       End Try
 
       Return String.Empty
    End Function
+
+   'This procedure displays any exceptions that occur.
+   Public Sub DisplayException(ExceptionO As Exception)
+      Dim ErrorCode As Integer = GetHRForException(ExceptionO) And &HFFFF%
+      Dim Description As String = $"{ExceptionO.Message}{NewLine}Error code: {ErrorCode}"
+
+      If MessageBox.Show(Description, "Error", MessageBoxButtons.OKCancel, MessageBoxIcon.Exclamation, MessageBoxDefaultButton.Button1) = DialogResult.Cancel Then
+         Application.Exit()
+      End If
+   End Sub
 
    'This procedure returns the description for the specified error code.
    Private Function ErrorDescription(ErrorCode As Integer) As String
       Try
          Return New Win32Exception(ErrorCode).Message
       Catch ExceptionO As Exception
-         HandleError(ExceptionO)
+         DisplayException(ExceptionO)
       End Try
 
       Return "No description."
@@ -137,7 +147,7 @@ Public Module CoreModule
 
          Return Result.ToString()
       Catch ExceptionO As Exception
-         HandleError(ExceptionO)
+         DisplayException(ExceptionO)
       End Try
 
       Return String.Empty
@@ -159,7 +169,7 @@ Public Module CoreModule
 
          Return FormattedGUID
       Catch ExceptionO As Exception
-         HandleError(ExceptionO)
+         DisplayException(ExceptionO)
       End Try
 
       Return String.Empty
@@ -182,7 +192,7 @@ Public Module CoreModule
 
          Return GUIDText
       Catch ExceptionO As Exception
-         HandleError(ExceptionO)
+         DisplayException(ExceptionO)
       End Try
 
       Return String.Empty
@@ -225,7 +235,7 @@ Public Module CoreModule
 
          Return Result.ToString()
       Catch ExceptionO As Exception
-         HandleError(ExceptionO)
+         DisplayException(ExceptionO)
       End Try
 
       Return String.Empty
@@ -252,7 +262,7 @@ Public Module CoreModule
 
          Return Keys
       Catch ExceptionO As Exception
-         HandleError(ExceptionO)
+         DisplayException(ExceptionO)
       End Try
 
       Return New List(Of String)
@@ -309,7 +319,7 @@ Public Module CoreModule
 
          Return Result.ToString()
       Catch ExceptionO As Exception
-         HandleError(ExceptionO)
+         DisplayException(ExceptionO)
       End Try
 
       Return String.Empty
@@ -341,7 +351,7 @@ Public Module CoreModule
 
          Return ValueData.ToString()
       Catch ExceptionO As Exception
-         HandleError(ExceptionO)
+         DisplayException(ExceptionO)
       End Try
 
       Return String.Empty
@@ -359,28 +369,18 @@ Public Module CoreModule
 
          Return Result
       Catch ExceptionO As Exception
-         HandleError(ExceptionO)
+         DisplayException(ExceptionO)
       End Try
 
       Return String.Empty
    End Function
-
-   'This procedure handles any errors that occur.
-   Public Sub HandleError(ExceptionO As Exception)
-      Dim ErrorCode As Integer = GetHRForException(ExceptionO) And &HFFFF%
-      Dim Description As String = $"{ExceptionO.Message}{NewLine}Error code: {ErrorCode}"
-
-      If MessageBox.Show(Description, "Error", MessageBoxButtons.OKCancel, MessageBoxIcon.Exclamation, MessageBoxDefaultButton.Button1) = DialogResult.Cancel Then
-         Application.Exit()
-      End If
-   End Sub
 
    'This procedure checks whether the specified mode indicates 64 bit access and returns the result.
    Private Function Is64BitAccess(Mode As UInteger) As Boolean
       Try
          Return (Mode And KEY_WOW64_64KEY) = KEY_WOW64_64KEY
       Catch ExceptionO As Exception
-         HandleError(ExceptionO)
+         DisplayException(ExceptionO)
       End Try
 
       Return False
@@ -402,7 +402,7 @@ Public Module CoreModule
 
          Return Result
       Catch ExceptionO As Exception
-         HandleError(ExceptionO)
+         DisplayException(ExceptionO)
       End Try
 
       Return False
@@ -415,7 +415,7 @@ Public Module CoreModule
 
          Return Integer.TryParse(Value, Number)
       Catch ExceptionO As Exception
-         HandleError(ExceptionO)
+         DisplayException(ExceptionO)
       End Try
 
       Return False
@@ -428,7 +428,7 @@ Public Module CoreModule
 
          Application.Run(InterfaceWindow)
       Catch ExceptionO As Exception
-         HandleError(ExceptionO)
+         DisplayException(ExceptionO)
       End Try
    End Sub
 
@@ -457,7 +457,7 @@ Public Module CoreModule
 
          Return ResultKeyH
       Catch ExceptionO As Exception
-         HandleError(ExceptionO)
+         DisplayException(ExceptionO)
       End Try
 
       Return IntPtr.Zero
