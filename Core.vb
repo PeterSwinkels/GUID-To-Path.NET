@@ -4,10 +4,10 @@ Option Explicit On
 Option Infer Off
 Option Strict On
 
-Imports Microsoft.VisualBasic
 Imports System
 Imports System.Collections.Generic
 Imports System.ComponentModel
+Imports System.Convert
 Imports System.Environment
 Imports System.IO
 Imports System.Runtime.InteropServices
@@ -223,8 +223,8 @@ Public Module CoreModule
             End If
 
             Result.Append(GetRegistryValueAsText(KeyH, GUIDText, "CanonicalName", "Canonical name"))
-            Result.Append(GetRegistryValueAsText(KeyH, GUIDText, String.Empty, "Default"))
             Result.Append(GetRegistryValueAsText(KeyH, GUIDText, "Class", "Class"))
+            Result.Append(GetRegistryValueAsText(KeyH, GUIDText, String.Empty, "Default"))
             Result.Append(GetRegistryValueAsText(KeyH, GUIDText, "Name", "Name"))
             Result.Append(NewLine)
 
@@ -285,7 +285,7 @@ Public Module CoreModule
          Next KeyName
 
          For Each KeyName As String In {"ProxyStubClsid", "ProxyStubClsid32"}
-            Value = UCase$(Trim$(GetRegistryValue(GUIDKeyH, KeyName, String.Empty)))
+            Value = GetRegistryValue(GUIDKeyH, KeyName, String.Empty).Trim().ToUpper()
             If Not String.IsNullOrEmpty(Value) Then
                If Not Value = GUIDText Then Result.Append($"{KeyName} = {FindGUID(Value)}")
             End If
@@ -339,7 +339,7 @@ Public Module CoreModule
             ReturnValue = RegQueryValueExA(KeyH, ValueName, UIntPtr.Zero, REG_SZ, ValueData, Length)
 
             If ReturnValue = ERROR_SUCCESS AndAlso Length > 0 Then
-               ValueData = New StringBuilder(ValueData.ToString().TrimEnd(ChrW(&H0%)))
+               ValueData = New StringBuilder(ValueData.ToString().TrimEnd(ToChar(&H0%)))
             Else
                ValueData.Clear()
             End If
