@@ -10,6 +10,7 @@ Imports System.ComponentModel
 Imports System.Convert
 Imports System.Environment
 Imports System.IO
+Imports System.Linq
 Imports System.Runtime.InteropServices
 Imports System.Runtime.InteropServices.Marshal
 Imports System.Text
@@ -69,13 +70,13 @@ Public Module CoreModule
    End Function
 
    'This procedure checks the key at the specified path for the specified GUID of the specified type and returns the result.
-   Private Function CheckKeyPath(HiveH As IntPtr, KeyPath As String, GUIDText As String, GUIDType As String, HiveKeyName As String) As String
+   Private Function CheckKeyPath(HiveH As IntPtr, KeyPath As String, GUIDText As String, GUIDType As String, SubKey As String, HiveKeyName As String) As String
       Try
          Dim GUIDParentKeyH As IntPtr = OpenKeyPath(HiveH, KeyPath)
          Dim ResultBuilder As New StringBuilder()
 
          If Not GUIDParentKeyH = IntPtr.Zero Then
-            ResultBuilder.Append(GetGUIDProperties(GUIDParentKeyH, GUIDText, GUIDType, HiveKeyName))
+            ResultBuilder.Append(GetGUIDProperties(GUIDParentKeyH, GUIDText, GUIDType, SubKey, HiveKeyName))
             RegCloseKey(GUIDParentKeyH)
          End If
 
@@ -111,7 +112,9 @@ Public Module CoreModule
    'This procedure searches for the specified GUID and gives the command to retrieve any paths found.
    Public Function FindGUID(GUIDText As String) As String
       Try
+         Dim KeyH As New IntPtr
          Dim Result As New StringBuilder()
+         Dim SubKeys As List(Of String) = Nothing
 
          If Not String.IsNullOrEmpty(GUIDText) Then
             If IS_VALID_GUID(GUIDText) Then
@@ -122,17 +125,28 @@ Public Module CoreModule
                      For Each GUIDType As String In {"AppID", "CLSID", "Component Categories", "Interface", "TypeLib"}
                         Select Case HiveKey
                            Case "HKCR"
-                              Result.Append(CheckKeyPath(HKEY_CLASSES_ROOT, GUIDType, GUIDText, GUIDType, HiveKey))
+                              Result.Append(CheckKeyPath(HKEY_CLASSES_ROOT, GUIDType, GUIDText, GUIDType, GUIDText, HiveKey))
                            Case "HKCU"
-                              Result.Append(CheckKeyPath(HKEY_CURRENT_USER, $"SOFTWARE\Classes\{GUIDType}", GUIDText, GUIDType, HiveKey))
+                              Result.Append(CheckKeyPath(HKEY_CURRENT_USER, $"SOFTWARE\Classes\{GUIDType}", GUIDText, GUIDType, GUIDText, HiveKey))
                         End Select
                      Next GUIDType
 
                      Select Case HiveKey
                         Case "HKLM"
-                           Result.Append(CheckKeyPath(HKEY_LOCAL_MACHINE, "SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FolderDescriptions", GUIDText, String.Empty, "HKLM"))
-                           Result.Append(CheckKeyPath(HKEY_LOCAL_MACHINE, "SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FolderTypes", GUIDText, String.Empty, "HKLM"))
-                           Result.Append(CheckKeyPath(HKEY_LOCAL_MACHINE, "SYSTEM\CurrentControlSet\Control\Class", GUIDText, String.Empty, "HKLM"))
+                           Result.Append(CheckKeyPath(HKEY_LOCAL_MACHINE, "SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FolderDescriptions", GUIDText, String.Empty, GUIDText, "HKLM"))
+                           Result.Append(CheckKeyPath(HKEY_LOCAL_MACHINE, "SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FolderTypes", GUIDText, String.Empty, GUIDText, "HKLM"))
+                           Result.Append(CheckKeyPath(HKEY_LOCAL_MACHINE, "SOFTWARE\Microsoft\Windows\CurrentVersion\Shell Extensions", GUIDText, "Approved Shell Extension", "Approved", "HKLM"))
+                           Result.Append(CheckKeyPath(HKEY_LOCAL_MACHINE, "SOFTWARE\Microsoft\Windows\CurrentVersion\Shell Extensions", GUIDText, "Blocked Shell Extension", "Blocked", "HKLM"))
+                           Result.Append(CheckKeyPath(HKEY_LOCAL_MACHINE, "SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks", GUIDText, "Task", GUIDText, "HKLM"))
+                           Result.Append(CheckKeyPath(HKEY_LOCAL_MACHINE, "SYSTEM\CurrentControlSet\Control\Class", GUIDText, String.Empty, GUIDText, "HKLM"))
+
+                           KeyH = OpenKeyPath(HKEY_LOCAL_MACHINE, "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall")
+                           SubKeys = GetKeys(KeyH)
+                           RegCloseKey(KeyH)
+
+                           For Each SubKey As String In (From Item In SubKeys Where Item.ToUpper().StartsWith(GUIDText.ToUpper()))
+                              Result.Append(CheckKeyPath(HKEY_LOCAL_MACHINE, "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall", SubKey, "Uninstaller", SubKey, "HKLM"))
+                           Next SubKey
                      End Select
                   Next HiveKey
                Next BitModeFlag
@@ -199,38 +213,48 @@ Public Module CoreModule
    End Function
 
    'This procedure returns the properties for the specified GUID of the specified type.
-   Private Function GetGUIDProperties(KeyH As IntPtr, GUIDText As String, GUIDType As String, HiveKeyName As String) As String
+   Private Function GetGUIDProperties(KeyH As IntPtr, GUIDText As String, GUIDType As String, SubKey As String, HiveKeyName As String) As String
       Try
+         Dim GUIDIsKey As Boolean = (SubKey.ToUpper() = GUIDText.ToUpper())
          Dim GUIDKeyH As New IntPtr
+         Dim GUIDValueData As String = If(GUIDIsKey, Nothing, GetRegistryValueAsText(KeyH, SubKey, GUIDText, "Description"))
          Dim Paths As String = String.Empty
          Dim Result As New StringBuilder()
-         Dim ReturnValue As Integer = RegOpenKeyExA(KeyH, GUIDText, 0UI, AccessMode(), GUIDKeyH)
+         Dim ReturnValue As New Integer
 
-         If ReturnValue = ERROR_SUCCESS Then
-            Result.Append($"{GUIDText} ({HiveKeyName}) ({GUIDType}) ")
+         If GUIDIsKey OrElse ((Not GUIDIsKey) AndAlso (Not GUIDValueData = Nothing)) Then
+            ReturnValue = RegOpenKeyExA(KeyH, SubKey, 0UI, AccessMode(), GUIDKeyH)
+            If ReturnValue = ERROR_SUCCESS Then
+               Result.Append($"{GUIDText} ({HiveKeyName}) ({GUIDType}) ")
 
-            If Is64BitAccess(AccessMode()) Then
-               Result.Append($"(64 bit){NewLine}")
-            Else
-               Result.Append($"(32 bit){NewLine}")
+               If Is64BitAccess(AccessMode()) Then
+                  Result.Append($"(64 bit){NewLine}")
+               Else
+                  Result.Append($"(32 bit){NewLine}")
+               End If
+
+               Paths = GetPathsFromGUID(GUIDKeyH, GUIDText)
+               If String.IsNullOrEmpty(Paths) Then
+                  Result.Append($"No handler/server paths.{NewLine}")
+               Else
+                  Result.Append($"{Paths}{NewLine}")
+               End If
+
+               Result.Append(GetRegistryValueAsText(KeyH, SubKey, "CanonicalName", "Canonical name"))
+               Result.Append(GetRegistryValueAsText(KeyH, SubKey, "Class", "Class"))
+               Result.Append(GetRegistryValueAsText(KeyH, SubKey, "Description", "Description"))
+               Result.Append(GetRegistryValueAsText(KeyH, SubKey, "DisplayName", "Display name"))
+               Result.Append(GetRegistryValueAsText(KeyH, SubKey, String.Empty, "Default"))
+               Result.Append(GetRegistryValueAsText(KeyH, SubKey, "Name", "Name"))
+               Result.Append(GetRegistryValueAsText(KeyH, SubKey, "Path", "Path"))
+               Result.Append(GetRegistryValueAsText(KeyH, SubKey, "Uninstallstring", "Uninstall string"))
+               If Not GUIDIsKey AndAlso GUIDValueData IsNot Nothing Then Result.Append(GUIDValueData)
+               Result.Append(NewLine)
+
+               RegCloseKey(GUIDKeyH)
+            ElseIf Not ReturnValue = ERROR_FILE_NOT_FOUND Then
+               Result.Append($"Error code: {ReturnValue} - ""{ErrorDescription(ReturnValue)}""{NewLine}")
             End If
-
-            Paths = GetPathsFromGUID(GUIDKeyH, GUIDText)
-            If String.IsNullOrEmpty(Paths) Then
-               Result.Append($"No handler/server paths.{NewLine}")
-            Else
-               Result.Append($"{Paths}{NewLine}")
-            End If
-
-            Result.Append(GetRegistryValueAsText(KeyH, GUIDText, "CanonicalName", "Canonical name"))
-            Result.Append(GetRegistryValueAsText(KeyH, GUIDText, "Class", "Class"))
-            Result.Append(GetRegistryValueAsText(KeyH, GUIDText, String.Empty, "Default"))
-            Result.Append(GetRegistryValueAsText(KeyH, GUIDText, "Name", "Name"))
-            Result.Append(NewLine)
-
-            RegCloseKey(GUIDKeyH)
-         ElseIf Not ReturnValue = ERROR_FILE_NOT_FOUND Then
-            Result.Append($"Error code: {ReturnValue} - ""{ErrorDescription(ReturnValue)}""{NewLine}")
          End If
 
          Return Result.ToString()
@@ -358,10 +382,10 @@ Public Module CoreModule
    End Function
 
    'This procedure attempts to retrieve the specified registry value and returns it formatted as text if found.
-   Private Function GetRegistryValueAsText(KeyH As IntPtr, GUIDText As String, ValueName As String, Description As String) As String
+   Private Function GetRegistryValueAsText(KeyH As IntPtr, SubKey As String, ValueName As String, Description As String) As String
       Try
          Dim Result As String = String.Empty
-         Dim Value As String = GetRegistryValue(KeyH, GUIDText, ValueName)
+         Dim Value As String = GetRegistryValue(KeyH, SubKey, ValueName)
 
          If Not String.IsNullOrEmpty(Value) Then
             Result = $"{Description} = ""{Value}""{NewLine}"
