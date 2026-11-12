@@ -1,1 +1,1 @@
-This program allows the user to specify GUIDs which the program looks for in specific registry keys in order to retrieve information about which files are being referred to by the GUIDs specified.
+This program allows the user to specify GUIDs which the program looks for in specific registry keys in order to retrieve information about which files are being referred to by the GUIDs specified. The program might not be able to access the entire registry without administrator rights.
