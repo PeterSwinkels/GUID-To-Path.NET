@@ -34,6 +34,9 @@ Partial Class InterfaceWindow
         '
         'GUIDListBox
         '
+        Me.GUIDListBox.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
+            Or System.Windows.Forms.AnchorStyles.Left) _
+            Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.GUIDListBox.BackColor = System.Drawing.SystemColors.Window
         Me.GUIDListBox.Font = New System.Drawing.Font("Consolas", 12.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.GUIDListBox.Location = New System.Drawing.Point(12, 29)
@@ -55,6 +58,8 @@ Partial Class InterfaceWindow
         '
         'ResultsBox
         '
+        Me.ResultsBox.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left) _
+            Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.ResultsBox.BackColor = System.Drawing.SystemColors.Window
         Me.ResultsBox.Font = New System.Drawing.Font("Consolas", 12.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.ResultsBox.Location = New System.Drawing.Point(15, 310)
@@ -77,7 +82,7 @@ Partial Class InterfaceWindow
         '
         'SearchButton
         '
-        Me.SearchButton.Anchor = System.Windows.Forms.AnchorStyles.None
+        Me.SearchButton.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.SearchButton.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.SearchButton.Location = New System.Drawing.Point(798, 271)
         Me.SearchButton.Name = "SearchButton"

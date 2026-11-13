@@ -38,18 +38,12 @@ Public Class InterfaceWindow
    'This procedure adjusts this window to its new size.
    Private Sub InterfaceWindow_Resize(sender As Object, e As EventArgs) Handles Me.Resize
       Try
-         GUIDListBox.Width = CInt(Me.ClientSize.Width - 32)
          GUIDListBox.Height = CInt((Me.ClientSize.Height / 2) - 48)
+         ResultsBox.Height = GUIDListBox.Height
 
-         ResultsBox.Width = CInt(Me.ClientSize.Width - 32)
-
-         ResultsBox.Height = CInt((Me.ClientSize.Height / 2) - 48)
          ResultsBox.Top = CInt(GUIDListBox.Top + GUIDListBox.Height + 48)
-
          ResultsLabel.Top = CInt(GUIDListBox.Top + GUIDListBox.Height + 16)
-
-         SearchButton.Left = CInt((Me.ClientSize.Width - 32) - SearchButton.Width)
-         SearchButton.Top = CInt(GUIDListBox.Top + GUIDListBox.Height + 16)
+         SearchButton.Top = ResultsLabel.Top
       Catch
       End Try
    End Sub
